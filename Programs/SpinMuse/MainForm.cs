@@ -66,7 +66,8 @@ namespace SpinMuse
             this._lastClickedPoint = GetImagePointOnZoom(baseXY);
             pbxEdit.Invalidate(); // PictureBoxを再描画する
 
-            this.btnCreateGifWithRedLineAxis.Enabled = true;
+            this.btnCreateGifWithRedLineAxisColor.Enabled = true;
+            this.btnCreateGifWithRedLineAxisMono.Enabled = true;
         }
 
         private string CreateGifWithRedLineAxi(string filename, bool IsMonochrome = true)
@@ -282,12 +283,26 @@ namespace SpinMuse
             }
         }
 
-        private void btnCreateGifWithRedLineAxis_Click(object sender, EventArgs e)
+        private void btnCreateGifWithRedLineAxisColor_Click(object sender, EventArgs e)
         {
             this.pbxAnimation.Image?.Dispose();
 
-            //string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
             string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane, false);
+
+            if (gifAnimeFilename == "")
+            {
+                return;
+            }
+
+            this.pbxAnimation.Image?.Dispose();
+            this.pbxAnimation.Image = Image.FromFile(gifAnimeFilename);
+        }
+
+        private void btnCreateGifWithRedLineAxisMono_Click(object sender, EventArgs e)
+        {
+            this.pbxAnimation.Image?.Dispose();
+
+            string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
 
             if (gifAnimeFilename == "")
             {
