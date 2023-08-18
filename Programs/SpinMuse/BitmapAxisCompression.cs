@@ -20,7 +20,17 @@ namespace SpinMuse
 
         public BitmapAxisCompression(Bitmap inputBitmap)
         {
-            this._bitmap = inputBitmap;
+            this._bitmap = new Bitmap(inputBitmap.Width, inputBitmap.Height);
+
+            using (Graphics g = Graphics.FromImage(this._bitmap))
+            {
+                // 背景を白く塗りつぶす
+                g.FillRectangle(Brushes.White, 0, 0, inputBitmap.Width, inputBitmap.Height);
+
+                // 元の画像を白い背景の上に描画
+                g.DrawImage(inputBitmap, 0, 0);
+            }
+
             ConvertToMonochromeAndSet();
             this._pixelData = ConvertBitmapToByteArray(this._monochromeImage);
         }
@@ -46,6 +56,14 @@ namespace SpinMuse
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+        public void getImage(out Bitmap image)
+        {
+            if (this._bitmap == null)
+            {
+                image = null;
+            }
+            image = new Bitmap(this._bitmap);
         }
 
         public void getMonochromeImage(out Bitmap monochromeImage)

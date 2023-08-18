@@ -92,7 +92,7 @@ namespace SpinMuse
             }
             else
             {
-                sample = new Bitmap(bmp);
+                bmpAxComp.getImage(out sample);
             }
 
             List<double> komasu = new List<double>();
@@ -286,8 +286,8 @@ namespace SpinMuse
         {
             this.pbxAnimation.Image?.Dispose();
 
-            string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
-            //string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane, false);
+            //string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
+            string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane, false);
 
             if (gifAnimeFilename == "")
             {
