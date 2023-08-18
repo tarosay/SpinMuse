@@ -16,6 +16,9 @@ namespace SpinMuse
 {
     public partial class MainForm : Form
     {
+        private Point? _lastClickedPoint;
+        private string _imageFilemane = "";
+
         public MainForm()
         {
             InitializeComponent();
@@ -46,14 +49,41 @@ namespace SpinMuse
 
             if (!File.Exists(filenames[0])) { return; }
 
-            // backgroundWorker1.RunWorkerAsync(filenames[0]);
-
-            string filename = filenames[0];
-            Bitmap bmp = ReadImageFile(filename);
-            Bitmap koma;
+            this._imageFilemane = filenames[0];
+            Bitmap bmp = ReadImageFile(this._imageFilemane);
 
             BitmapAxisCompression bmpAxComp = new BitmapAxisCompression(bmp);
             Point baseXY = bmpAxComp.GetLowestBlackPixelCoordinates();
+
+            bmpAxComp.getMonochromeImage(out Bitmap silhouette);
+
+            bmpAxComp?.Dispose();
+            bmp?.Dispose();
+
+            this.pbxEdit.Image?.Dispose();
+            this.pbxEdit.Image = silhouette;
+
+            this._lastClickedPoint = GetImagePointOnZoom(baseXY);
+            pbxEdit.Invalidate(); // PictureBoxを再描画する
+
+            this.btnCreateGifWithRedLineAxis.Enabled = true;
+        }
+
+        private string CreateGifWithRedLineAxi(string filename)
+        {
+            string gifanimeFilename = "";
+            if (!File.Exists(filename)) { return gifanimeFilename; }
+
+            if (!this._lastClickedPoint.HasValue) { return gifanimeFilename; }
+
+            Point point = new Point(this._lastClickedPoint.Value.X, this._lastClickedPoint.Value.Y);
+
+            Bitmap bmp = ReadImageFile(filename);
+            Bitmap koma;
+
+            Point baseXY = GetPixcelOnPicture(point);
+
+            BitmapAxisCompression bmpAxComp = new BitmapAxisCompression(bmp);
 
             List<double> komasu = new List<double>();
             List<Bitmap> komas = new List<Bitmap>();
@@ -102,22 +132,19 @@ namespace SpinMuse
             bmpAxComp?.Dispose();
             bmp?.Dispose();
 
-            string gifFilename = Path.GetDirectoryName(filename) + "\\" + Path.GetFileNameWithoutExtension(filename);
+            gifanimeFilename = Path.GetDirectoryName(filename) + "\\" + Path.GetFileNameWithoutExtension(filename) + "_ani.gif";
 
             AnimatedGifCreator agc = new AnimatedGifCreator();
-            agc.SaveGifWithMagickNET(komas, gifFilename + "_ani.gif", 5);
+            agc.SaveGifWithMagickNET(komas, gifanimeFilename, 5);
 
             for (int i = 1; i < komas.Count; i++)
             {
                 komas[i]?.Dispose();
             }
 
-            Image oldImage = this.pictureBox1.Image;
-
-            this.pictureBox1.Image = komas[0];
-
-            oldImage?.Dispose();
+            return gifanimeFilename;
         }
+
 
         public Bitmap ReadImageFile(string filename)
         {
@@ -146,6 +173,119 @@ namespace SpinMuse
                 Debug.WriteLine(ex.StackTrace);
             }
             return bmp;
+        }
+        private Point GetImagePointOnZoom(Point point)
+        {
+            float imageAspect = (float)this.pbxEdit.Image.Width / this.pbxEdit.Image.Height;
+            float controlAspect = (float)this.pbxEdit.Width / this.pbxEdit.Height;
+            float xOffset = 0;
+            float yOffset = 0;
+            float adjustedWidth = this.pbxEdit.Width;
+            float adjustedHeight = this.pbxEdit.Height;
+
+            if (imageAspect > controlAspect)
+            {
+                // If image is wider, adjust height and calculate y offset
+                adjustedHeight = this.pbxEdit.Width / imageAspect;
+                yOffset = (this.pbxEdit.Height - adjustedHeight) / 2;
+            }
+            else
+            {
+                // If image is taller, adjust width and calculate x offset
+                adjustedWidth = this.pbxEdit.Height * imageAspect;
+                xOffset = (this.pbxEdit.Width - adjustedWidth) / 2;
+            }
+
+            int x = (int)((point.X * adjustedWidth / this.pbxEdit.Image.Width) + xOffset);
+            int y = (int)((point.Y * adjustedHeight / this.pbxEdit.Image.Height) + yOffset);
+
+            return new Point(x, y);
+        }
+        private Point GetPixcelOnPicture(Point location)
+        {
+            float imageAspect = (float)this.pbxEdit.Image.Width / this.pbxEdit.Image.Height;
+            float controlAspect = (float)this.pbxEdit.Width / this.pbxEdit.Height;
+            float xOffset = 0;
+            float yOffset = 0;
+            float adjustedWidth = this.pbxEdit.Width;
+            float adjustedHeight = this.pbxEdit.Height;
+
+            if (imageAspect > controlAspect)
+            {
+                // If image is wider, adjust height and calculate y offset
+                adjustedHeight = this.pbxEdit.Width / imageAspect;
+                yOffset = (this.pbxEdit.Height - adjustedHeight) / 2;
+            }
+            else
+            {
+                // If image is taller, adjust width and calculate x offset
+                adjustedWidth = this.pbxEdit.Height * imageAspect;
+                xOffset = (this.pbxEdit.Width - adjustedWidth) / 2;
+            }
+
+            int originalX = (int)((location.X - xOffset) * (this.pbxEdit.Image.Width / adjustedWidth));
+            int originalY = (int)((location.Y - yOffset) * (this.pbxEdit.Image.Height / adjustedHeight));
+
+            return new Point(originalX, originalY);
+        }
+
+
+        private void pbxEdit_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (this.pbxEdit.Image == null)
+            {
+                return;
+            }
+
+            if (e.Button != MouseButtons.Left)
+            {
+                return;
+            }
+
+            Rectangle pictureBoxBounds = new Rectangle(0, 0, pbxEdit.Width, pbxEdit.Height);
+
+            if (pictureBoxBounds.Contains(e.Location))
+            {
+                this._lastClickedPoint = e.Location;
+                pbxEdit.Invalidate(); // PictureBoxを再描画する
+            }
+            else
+            {
+                this._lastClickedPoint = null;
+            }
+        }
+
+        private void pbxEdit_Paint(object sender, PaintEventArgs e)
+        {
+            if (this.pbxEdit.Image == null)
+            {
+                return;
+            }
+
+            if (this._lastClickedPoint.HasValue)
+            {
+                using (Pen pen = new Pen(Color.Red, 2)) // 赤い色と太さ2のペンを使用します。
+                {
+                    int x = this._lastClickedPoint.Value.X;
+                    e.Graphics.DrawLine(pen, x, 0, x, pbxEdit.Height);
+                }
+            }
+        }
+
+        private void btnCreateGifWithRedLineAxis_Click(object sender, EventArgs e)
+        {
+            this.pbxAnimation.Image?.Dispose();
+
+
+            string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
+
+            if (gifAnimeFilename == "")
+            {
+                return;
+            }
+
+            this.pbxAnimation.Image?.Dispose();
+            this.pbxAnimation.Image = Image.FromFile(gifAnimeFilename);
         }
     }
 }

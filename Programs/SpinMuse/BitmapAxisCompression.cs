@@ -48,6 +48,15 @@ namespace SpinMuse
             GC.SuppressFinalize(this);
         }
 
+        public void getMonochromeImage(out Bitmap monochromeImage)
+        {
+            if (this._monochromeImage == null)
+            {
+                monochromeImage = null;
+            }
+            monochromeImage = new Bitmap(this._monochromeImage);
+        }
+
         public byte[][,] ConvertBitmapToByteArray(Bitmap bitmap)
         {
             // Bitmapをロックし、BitmapDataオブジェクトを取得
