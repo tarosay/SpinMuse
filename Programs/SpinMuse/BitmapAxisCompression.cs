@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SpinMuse
 {
-    public class BitmapAxisCompression:IDisposable
+    public class BitmapAxisCompression : IDisposable
     {
         private readonly Bitmap _bitmap;
         private Bitmap _monochromeImage = null;
@@ -237,10 +237,16 @@ namespace SpinMuse
             return result;
         }
 
-        // 指定したX座標を通るY軸を基軸として、外側の画素を指定比率で縮める
         public Bitmap CompressAroundAxis(int xAxis, double compressionRatio)
         {
-            Bitmap bbbmp = BalanceBitmapByXCoordinate(this._monochromeImage, xAxis);
+            return CompressAroundAxis(this._monochromeImage, xAxis, compressionRatio);
+        }
+
+        // 指定したX座標を通るY軸を基軸として、外側の画素を指定比率で縮める
+        public Bitmap CompressAroundAxis(Bitmap original, int xAxis, double compressionRatio)
+        {
+            //Bitmap bbbmp = BalanceBitmapByXCoordinate(this._monochromeImage, xAxis);
+            Bitmap bbbmp = BalanceBitmapByXCoordinate(original, xAxis);
 
             if (compressionRatio >= 1.0)
             {
@@ -335,10 +341,16 @@ namespace SpinMuse
             return flipped;
         }
 
-        // ビットマップを左右反転させてから、指定したX座標を通るY軸を基軸として、外側の画素を指定比率で縮める
         public Bitmap CompressAfterFlipAroundAxis(int xAxis, double compressionRatio)
         {
-            Bitmap bbbmp = BalanceBitmapByXCoordinate(this._monochromeImage, xAxis);
+            return CompressAfterFlipAroundAxis(this._monochromeImage, xAxis, compressionRatio);
+        }
+
+        // ビットマップを左右反転させてから、指定したX座標を通るY軸を基軸として、外側の画素を指定比率で縮める
+        public Bitmap CompressAfterFlipAroundAxis(Bitmap original, int xAxis, double compressionRatio)
+        {
+            //Bitmap bbbmp = BalanceBitmapByXCoordinate(this._monochromeImage, xAxis);
+            Bitmap bbbmp = BalanceBitmapByXCoordinate(original, xAxis);
             Bitmap flipbmp = FlipHorizontally(bbbmp);
             bbbmp.Dispose();
 

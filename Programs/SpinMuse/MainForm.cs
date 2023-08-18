@@ -69,7 +69,7 @@ namespace SpinMuse
             this.btnCreateGifWithRedLineAxis.Enabled = true;
         }
 
-        private string CreateGifWithRedLineAxi(string filename)
+        private string CreateGifWithRedLineAxi(string filename, bool IsMonochrome = true)
         {
             string gifanimeFilename = "";
             if (!File.Exists(filename)) { return gifanimeFilename; }
@@ -85,6 +85,16 @@ namespace SpinMuse
 
             BitmapAxisCompression bmpAxComp = new BitmapAxisCompression(bmp);
 
+            Bitmap sample;
+            if (IsMonochrome)
+            {
+                bmpAxComp.getMonochromeImage(out sample);
+            }
+            else
+            {
+                sample = new Bitmap(bmp);
+            }
+
             List<double> komasu = new List<double>();
             List<Bitmap> komas = new List<Bitmap>();
 
@@ -96,41 +106,42 @@ namespace SpinMuse
             //0～90度
             for (int i = 0; i < komasu.Count; i++)
             {
-                koma = bmpAxComp.CompressAroundAxis(baseXY.X, komasu[i]);
+                koma = bmpAxComp.CompressAroundAxis(sample, baseXY.X, komasu[i]);
                 komas.Add(koma);
             }
 
             //90度
-            koma = bmpAxComp.CompressAroundAxis(baseXY.X, 0);
+            koma = bmpAxComp.CompressAroundAxis(sample, baseXY.X, 0);
             komas.Add(koma);
 
             //90～180度
             for (int i = komasu.Count - 1; i >= 0; i--)
             {
-                koma = bmpAxComp.CompressAfterFlipAroundAxis(baseXY.X, komasu[i]);
+                koma = bmpAxComp.CompressAfterFlipAroundAxis(sample, baseXY.X, komasu[i]);
                 komas.Add(koma);
             }
 
             //180～270度
             for (int i = 0; i < komasu.Count; i++)
             {
-                koma = bmpAxComp.CompressAfterFlipAroundAxis(baseXY.X, komasu[i]);
+                koma = bmpAxComp.CompressAfterFlipAroundAxis(sample, baseXY.X, komasu[i]);
                 komas.Add(koma);
             }
 
             //270度
-            koma = bmpAxComp.CompressAroundAxis(baseXY.X, 0);
+            koma = bmpAxComp.CompressAroundAxis(sample, baseXY.X, 0);
             komas.Add(koma);
 
             //270～360度
             for (int i = komasu.Count - 1; i >= 0; i--)
             {
-                koma = bmpAxComp.CompressAroundAxis(baseXY.X, komasu[i]);
+                koma = bmpAxComp.CompressAroundAxis(sample, baseXY.X, komasu[i]);
                 komas.Add(koma);
             }
 
             bmpAxComp?.Dispose();
             bmp?.Dispose();
+            sample?.Dispose();
 
             gifanimeFilename = Path.GetDirectoryName(filename) + "\\" + Path.GetFileNameWithoutExtension(filename) + "_ani.gif";
 
@@ -144,7 +155,6 @@ namespace SpinMuse
 
             return gifanimeFilename;
         }
-
 
         public Bitmap ReadImageFile(string filename)
         {
@@ -276,8 +286,8 @@ namespace SpinMuse
         {
             this.pbxAnimation.Image?.Dispose();
 
-
             string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane);
+            //string gifAnimeFilename = CreateGifWithRedLineAxi(this._imageFilemane, false);
 
             if (gifAnimeFilename == "")
             {
