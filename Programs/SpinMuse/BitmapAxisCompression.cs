@@ -10,17 +10,42 @@ using System.Threading.Tasks;
 
 namespace SpinMuse
 {
-    public class BitmapAxisCompression
+    public class BitmapAxisCompression:IDisposable
     {
         private readonly Bitmap _bitmap;
         private Bitmap _monochromeImage = null;
         private byte[][,] _pixelData = null;
+
+        private bool _disposed = false; // このリソースが既にDisposeされているかどうかを示すフラグ
 
         public BitmapAxisCompression(Bitmap inputBitmap)
         {
             this._bitmap = inputBitmap;
             ConvertToMonochromeAndSet();
             this._pixelData = ConvertBitmapToByteArray(this._monochromeImage);
+        }
+        // ファイナライザ (デストラクタ)
+        ~BitmapAxisCompression()
+        {
+            Dispose(false);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) { return; }
+
+            if (disposing)
+            {
+                _monochromeImage?.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        // IDisposableインターフェースの実装
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public byte[][,] ConvertBitmapToByteArray(Bitmap bitmap)
@@ -217,71 +242,30 @@ namespace SpinMuse
             bbbmp.Dispose();
 
             return result;
-
-
-
-            //Bitmap withBorder;
-            ////先ず、Xの値が画像の真ん中に来るように画像の幅を調整する
-            //int width = this._monochromeImage.Width;
-            //int height = this._monochromeImage.Height;
-            //int left_width = xAxis;
-            //int right_width = width - xAxis;
-
-            //if (left_width > right_width)
-            //{
-            //    //左の方が大きかったら、右側に足りない部分を足す
-            //    int borderWidth = left_width - right_width;
-
-            //    // 新しいBitmapのサイズを、オリジナルの幅 + 境界の幅、オリジナルの高さとして設定
-            //    withBorder = new Bitmap(width + borderWidth, height);
-
-            //    using (Graphics g = Graphics.FromImage(withBorder))
-            //    {
-            //        // 元の画像を描画
-            //        g.DrawImage(this._monochromeImage, 0, 0);
-
-            //        // 白色のブラシを使って、右側に縁を追加
-            //        g.FillRectangle(Brushes.White, width, 0, borderWidth, height);
-            //    }
-            //}
-            //else
-            //{
-            //    int borderWidth = right_width - left_width;
-
-            //    // 新しいBitmapのサイズを、オリジナルの幅 + 境界の幅、オリジナルの高さとして設定
-            //    withBorder = new Bitmap(width + borderWidth, height);
-
-            //    using (Graphics g = Graphics.FromImage(withBorder))
-            //    {
-            //        // 元の画像を縁の分だけ右に移動して描画
-            //        g.DrawImage(this._monochromeImage, borderWidth, 0);
-
-            //        // 白色のブラシを使って、左側に縁を追加
-            //        g.FillRectangle(Brushes.White, 0, 0, borderWidth, height);
-            //    }
-            //}
-
-            //if (compressionRatio >= 1.0)
-            //{
-            //    return withBorder;
-            //}
-
-            //Bitmap result = ResizeAndCombine(withBorder, compressionRatio);
-            //withBorder.Dispose();
-            //return result;
         }
 
         public Bitmap ResizeAndCombine(Bitmap original, double resizeRatio)
         {
             int halfWidth = original.Width / 2;
+            int partsWidth = (int)(halfWidth * resizeRatio);
+
+            if (partsWidth == 0)
+            {
+                Bitmap whiteBitmap = new Bitmap(original.Width, original.Height);
+                using (Graphics g = Graphics.FromImage(whiteBitmap))
+                {
+                    g.FillRectangle(Brushes.White, 0, 0, whiteBitmap.Width, whiteBitmap.Height);
+                }
+                return whiteBitmap;
+            }
 
             // 元のBitmapを2つに等分する
             using (Bitmap leftPart = original.Clone(new Rectangle(0, 0, halfWidth, original.Height), original.PixelFormat))
             using (Bitmap rightPart = original.Clone(new Rectangle(halfWidth, 0, halfWidth, original.Height), original.PixelFormat))
             {
                 // それぞれのBitmapを指定の割合でX方向に縮める
-                using (Bitmap resizedLeft = new Bitmap((int)(halfWidth * resizeRatio), original.Height))
-                using (Bitmap resizedRight = new Bitmap((int)(halfWidth * resizeRatio), original.Height))
+                using (Bitmap resizedLeft = new Bitmap(partsWidth, original.Height))
+                using (Bitmap resizedRight = new Bitmap(partsWidth, original.Height))
                 {
                     using (Graphics g = Graphics.FromImage(resizedLeft))
                     {
@@ -322,6 +306,7 @@ namespace SpinMuse
                 }
             }
         }
+
         public Bitmap FlipHorizontally(Bitmap original)
         {
             Bitmap flipped = new Bitmap(original.Width, original.Height);

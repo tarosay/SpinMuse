@@ -50,41 +50,73 @@ namespace SpinMuse
 
             string filename = filenames[0];
             Bitmap bmp = ReadImageFile(filename);
+            Bitmap koma;
 
             BitmapAxisCompression bmpAxComp = new BitmapAxisCompression(bmp);
             Point baseXY = bmpAxComp.GetLowestBlackPixelCoordinates();
-            
-            Bitmap koma0;
 
-            koma0 = bmpAxComp.CompressAroundAxis(baseXY.X, 0.5);
-            koma0.Save("spinmuse0.png", ImageFormat.Png);
-            koma0.Dispose();
+            List<double> komasu = new List<double>();
+            List<Bitmap> komas = new List<Bitmap>();
 
-            koma0 = bmpAxComp.CompressAfterFlipAroundAxis(baseXY.X, 0.5);
-            koma0.Save("spinmuse1.png", ImageFormat.Png);
-            koma0.Dispose();
-
-            //koma0 = bmpAxComp.CompressAroundAxis(0, 1.0);
-
-
-
-            if (bmp != null)
+            for (int ang = 0; ang < 90; ang += 15)
             {
-                bmp.Dispose();
+                komasu.Add(Math.Cos(ang / 180.0 * Math.PI));
             }
 
-            //bmp = ConvertByteArrayToBitmap(pixelData);
+            //0～90度
+            for (int i = 0; i < komasu.Count; i++)
+            {
+                koma = bmpAxComp.CompressAroundAxis(baseXY.X, komasu[i]);
+                komas.Add(koma);
+            }
 
-            //bmp.Save(Path.GetDirectoryName(filename) + "\\" + Path.GetFileNameWithoutExtension(filename) + "_a.png", ImageFormat.Png);
+            //90度
+            koma = bmpAxComp.CompressAroundAxis(baseXY.X, 0);
+            komas.Add(koma);
 
-            //Image oldImage = this.pictureBox1.Image;
+            //90～180度
+            for (int i = komasu.Count - 1; i >= 0; i--)
+            {
+                koma = bmpAxComp.CompressAfterFlipAroundAxis(baseXY.X, komasu[i]);
+                komas.Add(koma);
+            }
 
-            //this.pictureBox1.Image = bmp;
+            //180～270度
+            for (int i = 0; i < komasu.Count; i++)
+            {
+                koma = bmpAxComp.CompressAfterFlipAroundAxis(baseXY.X, komasu[i]);
+                komas.Add(koma);
+            }
 
-            //if (oldImage != null)
-            //{
-            //    oldImage.Dispose();
-            //}
+            //270度
+            koma = bmpAxComp.CompressAroundAxis(baseXY.X, 0);
+            komas.Add(koma);
+
+            //270～360度
+            for (int i = komasu.Count - 1; i >= 0; i--)
+            {
+                koma = bmpAxComp.CompressAroundAxis(baseXY.X, komasu[i]);
+                komas.Add(koma);
+            }
+
+            bmpAxComp?.Dispose();
+            bmp?.Dispose();
+
+            string gifFilename = Path.GetDirectoryName(filename) + "\\" + Path.GetFileNameWithoutExtension(filename);
+
+            AnimatedGifCreator agc = new AnimatedGifCreator();
+            agc.SaveGifWithMagickNET(komas, gifFilename + "_ani.gif", 5);
+
+            for (int i = 1; i < komas.Count; i++)
+            {
+                komas[i]?.Dispose();
+            }
+
+            Image oldImage = this.pictureBox1.Image;
+
+            this.pictureBox1.Image = komas[0];
+
+            oldImage?.Dispose();
         }
 
         public Bitmap ReadImageFile(string filename)
