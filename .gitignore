@@ -163,6 +163,7 @@ ehthumbs.db
 bin/
 obj/
 **/wwwroot/lib/
+.vs/
 
 # Rider
 .idea/

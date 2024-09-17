@@ -24,7 +24,7 @@ namespace SpinMuse
                     {
                         bitmaps[i].Save(memory, System.Drawing.Imaging.ImageFormat.Png);
                         var magickImage = new MagickImage(memory.ToArray());
-                        magickImage.AnimationDelay = delay; // delay is in 1/100ths of a second
+                        magickImage.AnimationDelay = (uint)delay; // delay is in 1/100ths of a second
                         collection.Add(magickImage);
                     }
                 }
